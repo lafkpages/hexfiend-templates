@@ -38,11 +38,18 @@ main_guard {
     set headers [list]
     section -collapsed Headers {
         while {true} {
+            set a [pos]
             set header [read_cell]
+            set b [pos]
+
             lappend headers $header
             puts $headers
 
-            entry $header ""
+            if {$b > $a} {
+                entry "Header" $header [expr $b - $a] $a
+            } else {
+                entry "Header" $header
+            }
 
             if {[ascii 1] eq "\n"} {
                 break
