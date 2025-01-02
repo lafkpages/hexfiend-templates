@@ -236,7 +236,7 @@ main_guard {
 
                             entry "Features" "0b$features" 1
 
-                            entry "Signal interface type" [expr {[string index 0 $features] == 1 ? "interlaced" : "non-interlaced"}] 1
+                            entry "Signal interface type" [expr {[string index 0 $features] == 1 ? "Interlaced" : "Non-interlaced"}] 1
 
                             set stereo_mode [string range $features 1 2]
                             append stereo_mode [string index $features 7]
