@@ -127,6 +127,9 @@ main_guard {
                                 0xFC {
                                     ascii 13 "Monitor name"
                                 }
+                                0x10 {
+                                    bytes 13 "Dummy descriptor"
+                                }
                                 default {
                                     move -2
                                     entry "Descriptor type" $descriptor_type 1
