@@ -230,7 +230,49 @@ main_guard {
                             bytes 1 "Horizontal/vertical image size 4MSB"
                             uint8 "Horizontal border pixels"
                             uint8 "Vertical border lines"
-                            bytes 1 "Features"
+
+                            binary scan [bytes 1] Bu8 features
+                            move -1
+
+                            entry "Features" "0b$features" 1
+
+                            entry "Signal interface type" [expr {[string index 0 $features] == 1 ? "interlaced" : "non-interlaced"}] 1
+
+                            set stereo_mode [string range $features 1 2]
+                            append stereo_mode [string index $features 7]
+                            set stereo_mode_label "Unknown"
+                            switch -glob $stereo_mode {
+                                "00?" {
+                                    set stereo_mode_label "None"
+                                }
+
+                                "010" {
+                                    set stereo_mode_label "Field sequential, right during stereo sync"
+                                }
+
+                                "100" {
+                                    set stereo_mode_label "Field sequential, left during stereo sync"
+                                }
+
+                                "011" {
+                                    set stereo_mode_label "2-way interleaved, right image on even lines"
+                                }
+
+                                "101" {
+                                    set stereo_mode_label "2-way interleaved, left image on even lines"
+                                }
+
+                                "110" {
+                                    set stereo_mode_label "4-way interleaved"
+                                }
+
+                                "111" {
+                                    set stereo_mode_label "Side-by-side interleaved"
+                                }
+                            }
+                            entry "Stereo mode" $stereo_mode_label 1
+
+                            move 1
                         }
                     }
                 }
