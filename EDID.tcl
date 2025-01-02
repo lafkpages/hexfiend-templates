@@ -95,15 +95,83 @@ main_guard {
             }
         }
 
-        section -collapsed "Timing descriptor" {
-            # proc descriptor {} {
+        section -collapsed "Timing descriptors" {
+            proc descriptor {i} {
+                sentry 18 {
+                    set pixel_clock [uint16]
+                    move -2
 
-            # }
+                    if { $pixel_clock == 0 } {
+                        section "Monitor descriptor $i" {
+                            move 3
 
-            bytes 18 "Preferred timing descriptor"
-            bytes 18 "Timing descriptor 2"
-            bytes 18 "Timing descriptor 3"
-            bytes 18 "Timing descriptor 4"
+                            set descriptor_type [hex 1]
+                            move 1
+                            switch $descriptor_type {
+                                0xFF {
+                                    ascii 13 "Serial number"
+                                }
+                                0xFD {
+                                    bytes 1 "Offsets for display range limits"
+                                    uint8 "Minimum vertical field rate"
+                                    uint8 "Maximum vertical field rate"
+                                    uint8 "Minimum horizontal line rate"
+                                    uint8 "Maximum horizontal line rate"
+                                    uint8 "Maximum pixel clock rate"
+                                    hex 1 "Extended timing information type"
+                                    bytes 6 "Video timing parameters"
+                                }
+                                0xFE {
+                                    ascii 13 "Unspecified text"
+                                }
+                                0xFC {
+                                    ascii 13 "Monitor name"
+                                }
+                                default {
+                                    move -2
+                                    entry "Descriptor type" $descriptor_type 1
+                                    move 15
+                                }
+                            }
+                        }
+                    } else {
+                        set label "Timing descriptor $i"
+                        if { $i == 1 } {
+                            set label "Preferred timing descriptor"
+                        }
+
+                        section $label {
+                            set pixel_clock_mhz [expr {$pixel_clock / 100.0}]
+                            entry "Pixel clock" "$pixel_clock_mhz MHz" 2
+                            sectionvalue "$pixel_clock_mhz MHz"
+
+                            move 2
+
+                            uint8 "Horizontal active pixels 8LSB"
+                            uint8 "Horizontal blanking pixels 8LSB"
+                            bytes 1 "Horizontal active/blanking pixels MSB"
+                            uint8 "Vertical active lines 8LSB"
+                            uint8 "Vertical blanking lines 8LSB"
+                            bytes 1 "Vertical active/blanking lines MSB"
+                            uint8 "Horizontal sync offset 8LSB"
+                            uint8 "Horizontal sync pulse width 8LSB"
+                            bytes 1 "Vertical sync offset/pulse width 4LSB"
+                            bytes 1 "Horizontal/vertical sync offset/pulse 2MSB"
+                            uint8 "Horizontal image size 8LSB"
+                            uint8 "Vertical image size 8LSB"
+                            bytes 1 "Horizontal/vertical image size 4MSB"
+                            uint8 "Horizontal border pixels"
+                            uint8 "Vertical border lines"
+                            bytes 1 "Features"
+                        }
+                    }
+                }
+            }
+
+            descriptor 1
+            for {set i 2} {$i <= 4} {incr i} {
+                descriptor $i
+            }
         }
     }
 
