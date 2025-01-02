@@ -113,7 +113,7 @@ main_guard {
 
         goto 0
         set bytes_sum 0
-        for {set i 0} {$i < 127} {incr i} {
+        for {set i 0} {$i < 128} {incr i} {
             set bytes_sum [expr {($bytes_sum + [uint8]) % 256}]
         }
 
