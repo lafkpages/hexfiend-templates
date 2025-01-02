@@ -68,7 +68,7 @@ main_guard {
         uint8 "White Y MS8B"
     }
 
-    section -collapsed "Timing information" {
+    section "Timing information" {
         section -collapsed "Established timings" {
             bytes 3 "Timings"
         }
@@ -95,7 +95,7 @@ main_guard {
             }
         }
 
-        section -collapsed "Timing/monitor descriptors" {
+        section "Timing/monitor descriptors" {
             proc descriptor {i} {
                 sentry 18 {
                     set pixel_clock [uint16]
@@ -271,6 +271,30 @@ main_guard {
                                 }
                             }
                             entry "Stereo mode" $stereo_mode_label 1
+
+                            switch -glob [string range $features 3 4] {
+                                "0?" {
+                                    section "Analog sync." {
+                                        entry "Sync type" [expr {[string index $features 4] == 1 ? "Bipolar analog composite" : "Analog composite"}] 1
+                                        entry "Serration" [expr {[string index $features 5] == 1 ? "With serrations (H-sync during V-sync)" : "Without serrations"}] 1
+                                        entry "Sync on red and blue lines additionally to green" [expr {[string index $features 6] == 1 ? "Sync on all three (RGB) video signals" : "Sync on green signal only"}] 1
+                                    }
+                                }
+
+                                "10" {
+                                    section "Digital sync., composite (on HSync)" {
+                                        entry "Serration" [expr {[string index $features 5] == 1 ? "With serration (H-sync during V-sync)" : "Without serration"}] 1
+                                        entry "Horizontal sync polarity" [expr {[string index $features 6] == 1 ? "Positive" : "Negative"}] 1
+                                    }
+                                }
+
+                                "11" {
+                                    section "Digital sync., separate" {
+                                        entry "Vertical sync polarity" [expr {[string index $features 5] == 1 ? "Positive" : "Negative"}] 1
+                                        entry "Horizontal sync polarity" [expr {[string index $features 6] == 1 ? "Positive" : "Negative"}] 1
+                                    }
+                                }
+                            }
 
                             move 1
                         }
