@@ -95,58 +95,123 @@ main_guard {
             }
         }
 
-        section -collapsed "Timing descriptors" {
+        section -collapsed "Timing/monitor descriptors" {
             proc descriptor {i} {
                 sentry 18 {
                     set pixel_clock [uint16]
                     move -2
 
                     if { $pixel_clock == 0 } {
-                        section "Monitor descriptor $i" {
-                            move 3
+                        move 3
 
-                            set descriptor_type [hex 1]
-                            move 1
-                            switch $descriptor_type {
-                                0xFF {
-                                    ascii 13 "Serial number"
-                                }
-                                0xFD {
-                                    bytes 1 "Offsets for display range limits"
-                                    uint8 "Minimum vertical field rate"
-                                    uint8 "Maximum vertical field rate"
-                                    uint8 "Minimum horizontal line rate"
-                                    uint8 "Maximum horizontal line rate"
+                        set descriptor_type [hex 1]
+
+                        switch $descriptor_type {
+                            0xFF {
+                                ascii 14 "$i. Serial number"
+                            }
+                            0xFD {
+                                section "$i. Display range limits" {
+                                    binary scan [bytes 1] Bu8 offsets
+                                    # move -1
+                                    # entry "Offsets for display range limits" "0b$offsets" 1
+                                    # move 1
+
+                                    set min_ver_rate [uint8]
+                                    set max_ver_rate [uint8]
+                                    set min_hor_rate [uint8]
+                                    set max_hor_rate [uint8]
+
+                                    set hor_rate_offsets [string range $offsets 4 5]
+                                    switch $hor_rate_offsets {
+                                        00 {}
+                                        10 {
+                                            incr max_hor_rate 255
+                                        }
+                                        11 {
+                                            incr max_hor_rate 255
+                                            incr min_hor_rate 255
+                                        }
+                                        default {
+                                            report "Invalid horizontal rate offsets"
+                                        }
+                                    }
+
+                                    set ver_rate_offsets [string range $offsets 6 7]
+                                    switch $ver_rate_offsets {
+                                        00 {}
+                                        10 {
+                                            incr max_ver_rate 255
+                                        }
+                                        11 {
+                                            incr max_ver_rate 255
+                                            incr min_ver_rate 255
+                                        }
+                                        default {
+                                            report "Invalid vertical rate offsets"
+                                        }
+                                    }
+
+                                    move -4
+                                    entry "Minimum vertical field rate" $min_ver_rate 1
+                                    move 1
+                                    entry "Maximum vertical field rate" $max_ver_rate 1
+                                    move 1
+                                    entry "Minimum horizontal line rate" $min_hor_rate 1
+                                    move 1
+                                    entry "Maximum horizontal line rate" $max_hor_rate 1
+                                    move 1
+
                                     uint8 "Maximum pixel clock rate"
-                                    hex 1 "Extended timing information type"
-                                    bytes 6 "Video timing parameters"
+
+                                    set ext_timing_info_type [uint8]
+                                    switch $ext_timing_info_type {
+                                        0 -
+                                        1 {
+                                            set ext_timing_info [hex 7]
+                                            check {$ext_timing_info eq "0x0A202020202020"}
+                                        }
+                                        2 {
+                                            # TODO
+                                            move 7
+                                        }
+                                        4 {
+                                            # TODO
+                                            move 7
+                                        }
+                                        default {
+                                            report "Invalid extended timing information type: $ext_timing_info_type"
+                                            move 7
+                                        }
+                                    }
                                 }
-                                0xFE {
-                                    ascii 13 "Unspecified text"
-                                }
-                                0xFC {
-                                    ascii 13 "Monitor name"
-                                }
-                                0x10 {
-                                    bytes 13 "Dummy descriptor"
-                                }
-                                default {
+                            }
+                            0xFE {
+                                ascii 14 "$i. Unspecified text"
+                            }
+                            0xFC {
+                                ascii 14 "$i. Monitor name"
+                            }
+                            0x10 {
+                                bytes 14 "$i. Dummy descriptor"
+                            }
+                            default {
+                                section "$i. Monitor descriptor" {
                                     move -2
                                     entry "Descriptor type" $descriptor_type 1
-                                    move 15
+                                    move 16
                                 }
                             }
                         }
                     } else {
-                        set label "Timing descriptor $i"
+                        set label "$i. Timing descriptor"
                         if { $i == 1 } {
-                            set label "Preferred timing descriptor"
+                            append label " (preferred)"
                         }
 
                         section $label {
                             set pixel_clock_mhz [expr {$pixel_clock / 100.0}]
                             entry "Pixel clock" "$pixel_clock_mhz MHz" 2
-                            sectionvalue "$pixel_clock_mhz MHz"
 
                             move 2
 
