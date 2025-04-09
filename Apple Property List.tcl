@@ -149,6 +149,41 @@ proc parseObject {} {
             return [list $markerLeft $stringValue [expr { $stringSizeSize + $stringSize }]]
         }
 
+        "1010*" {
+            sectionname "Array"
+
+            set arraySize 0
+            set arraySizeSize 0
+            if { $markerRight == 1111 } {
+                set arraySizeInt [parseInt]
+                set arraySize [lindex $arraySizeInt 0]
+                set arraySizeSize [lindex $arraySizeInt 1]
+            } else {
+                set arraySize $markerRightValue
+                set arraySizeSize 1
+            }
+
+            move -$arraySizeSize
+            entry "Array size" $arraySize $arraySizeSize
+            move $arraySizeSize
+
+            sectionvalue $arraySize
+
+            set arrayValue [list]
+
+            for { set i 0 } { $i < $arraySize } { incr i } {
+                set arrayRef [uint_n $::object_ref_size]
+                move -$::object_ref_size
+                entry "Array ref" $arrayRef $::object_ref_size
+                move $::object_ref_size
+
+                lappend arrayValue $arrayRef
+            }
+
+            endsection
+            return [list $markerLeft $arrayValue [expr { $arraySizeSize + $::object_ref_size * $arraySize }]]
+        }
+
         "1101*" {
             sectionname "Dict"
 
@@ -208,6 +243,14 @@ proc renderPlistTree {key i} {
         0011 -
         0101 {
             entry $key $objectValue $objectSize $objectPos
+        }
+
+        1010 {
+            section $key {
+                for { set i 0 } { $i < [llength $objectValue] } { incr i } {
+                    renderPlistTree $i [lindex $objectValue $i]
+                }
+            }
         }
 
         1101 {
