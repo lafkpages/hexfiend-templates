@@ -266,12 +266,24 @@ proc renderPlistTree {key i} {
     lassign [lindex $objectTable $i] objectPos objectType objectValue objectSize
 
     switch $objectType {
-        0000 -
-        0001 -
-        0010 -
-        0011 -
+        0000 {
+            entry $key "bool:\t\t$objectValue" $objectSize $objectPos
+        }
+
+        0001 {
+            entry $key "integer:\t$objectValue" $objectSize $objectPos
+        }
+
+        0010 {
+            entry $key "real:\t\t$objectValue" $objectSize $objectPos
+        }
+
+        0011 {
+            entry $key "date:\t\t$objectValue" $objectSize $objectPos
+        }
+
         0101 {
-            entry $key $objectValue $objectSize $objectPos
+            entry $key "string:\t$objectValue" $objectSize $objectPos
         }
 
         1010 {
