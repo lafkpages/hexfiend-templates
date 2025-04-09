@@ -204,8 +204,6 @@ proc renderPlistTree {key i} {
 }
 
 main_guard {
-    puts "\n---\nApple Property List Binary Template"
-
     section -collapsed "Header" {
         set plistVersion [ascii 8]
         entry "Plist Version" $plistVersion 8 0
@@ -255,7 +253,5 @@ main_guard {
     }
 
     renderPlistTree "Plist tree" $top_object_offset
-
-    puts "---\n"
 }
 
