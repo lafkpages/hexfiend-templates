@@ -55,8 +55,35 @@ proc parseObject {} {
 
     set markerRightValue [expr { $markerByteValue & 15 }]
 
-    switch $markerLeft {
-        0001 {
+    switch -glob $markerByte {
+        "00000000" {
+            sectionname "Null"
+
+            sectionvalue "null"
+            move -1
+            entry "Null" "null" 1
+            move 1
+
+            endsection
+            return [list $markerLeft "null" 1]
+        }
+
+        "00001000" -
+        "00001001" {
+            sectionname "Bool"
+
+            set boolValue [expr { $markerRightValue == 8 ? "false" : "true" }]
+
+            sectionvalue $boolValue
+            move -1
+            entry "Bool" $boolValue 1
+            move 1
+
+            endsection
+            return [list $markerLeft $boolValue 1]
+        }
+
+        "0001*" {
             sectionname "Int"
 
             set int [parseInt $markerRightValue]
@@ -76,10 +103,7 @@ proc parseObject {} {
             return [list $markerLeft $intValue [expr { $intSize + 1 }]]
         }
 
-        0011 {
-            # Date markers are 00110011
-            assert { $markerRightValue == 3 }
-
+        "00110011" {
             sectionname "Date"
 
             # https://www.epochconverter.com/coredata
@@ -96,7 +120,7 @@ proc parseObject {} {
             return [list $markerLeft $dateValue 9]
         }
 
-        0101 {
+        "0101*" {
             sectionname "String (ASCII)"
 
             set stringSize 0
@@ -125,7 +149,7 @@ proc parseObject {} {
             return [list $markerLeft $stringValue [expr { $stringSizeSize + $stringSize }]]
         }
 
-        1101 {
+        "1101*" {
             sectionname "Dict"
 
             set dictSize 0
