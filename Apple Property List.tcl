@@ -182,7 +182,7 @@ proc renderPlistTree {key i} {
         0001 -
         0011 -
         0101 {
-            entry "($i) $key" $objectValue $objectSize $objectPos
+            entry $key $objectValue $objectSize $objectPos
         }
 
         1101 {
