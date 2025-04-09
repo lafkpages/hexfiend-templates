@@ -19,8 +19,6 @@ variable offset_table_start
 set objectTable [list]
 
 proc uint_n {n} {
-    # Otherwise, throw
-
     switch $n {
         1 { return [uint8] }
         2 { return [uint16] }
@@ -28,6 +26,16 @@ proc uint_n {n} {
         8 { return [uint64] }
         default {
             die "Invalid uint_n size: $n"
+        }
+    }
+}
+
+proc float_n {n} {
+    switch $n {
+        4 { return [float] }
+        8 { return [double] }
+        default {
+            die "Invalid float_n size: $n"
         }
     }
 }
@@ -101,6 +109,26 @@ proc parseObject {} {
 
             endsection
             return [list $markerLeft $intValue [expr { $intSize + 1 }]]
+        }
+
+        "0010*" {
+            sectionname "Real"
+
+            # Real size is calculated same as Int size
+
+            set realSize [expr { 2 ** $markerRightValue }]
+            set realValue [float_n $realSize]
+
+            move -$realSize
+            move -1
+            entry "Real size" $realSize 1
+            move 1
+            sectionvalue $realValue
+            entry "Real value" $realValue $realSize
+            move $realSize
+
+            endsection
+            return [list $markerLeft $realValue [expr { $realSize + 1 }]]
         }
 
         "00110011" {
@@ -240,6 +268,7 @@ proc renderPlistTree {key i} {
     switch $objectType {
         0000 -
         0001 -
+        0010 -
         0011 -
         0101 {
             entry $key $objectValue $objectSize $objectPos
