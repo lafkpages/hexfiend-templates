@@ -177,6 +177,24 @@ proc parseObject {} {
             return [list $markerLeft $stringValue [expr { $stringSizeSize + $stringSize }]]
         }
 
+        "1000*" {
+            sectionname "UID"
+
+            set uidSize [expr { $markerRight + 1 }]
+            set uidValue [uint_n $uidSize]
+
+            move -$uidSize
+            move -1
+            entry "UID size" $uidSize 1
+            move 1
+            sectionvalue $uidValue
+            entry "UID value" $uidValue $uidSize
+            move $uidSize
+
+            endsection
+            return [list $markerLeft $uidValue [expr { $uidSize + 1 }]]
+        }
+
         "1010*" {
             sectionname "Array"
 
@@ -284,6 +302,10 @@ proc renderPlistTree {key i} {
 
         0101 {
             entry $key "string:\t$objectValue" $objectSize $objectPos
+        }
+
+        1000 {
+            entry $key "uid:\t\t$objectValue" $objectSize $objectPos
         }
 
         1010 {
