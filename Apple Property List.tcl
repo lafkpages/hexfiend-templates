@@ -86,7 +86,9 @@ proc parseObject {} {
 
             sectionname "Date"
 
-            set dateValue [double]
+            # https://www.epochconverter.com/coredata
+            set dateValue [expr { [::tcl::mathfunc::int [double]] + 978307200 }]
+            set dateValue [clock format $dateValue]
 
             sectionvalue $dateValue
             move -8
