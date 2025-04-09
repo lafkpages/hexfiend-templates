@@ -203,6 +203,7 @@ proc renderPlistTree {key i} {
     lassign [lindex $objectTable $i] objectPos objectType objectValue objectSize
 
     switch $objectType {
+        0000 -
         0001 -
         0011 -
         0101 {
