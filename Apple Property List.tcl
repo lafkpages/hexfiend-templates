@@ -53,10 +53,6 @@ proc parseObject {} {
     set markerLeft [string range $markerByte 0 3]
     set markerRight [string range $markerByte 4 7]
 
-    move -1
-    entry "Object Marker" $markerByte 1
-    move 1
-
     set markerRightValue [expr { $markerByteValue & 15 }]
 
     switch $markerLeft {
@@ -77,7 +73,7 @@ proc parseObject {} {
             move $intSize
 
             endsection
-            return [list $markerLeft $intValue $intSize]
+            return [list $markerLeft $intValue [expr { $intSize + 1 }]]
         }
 
         0011 {
@@ -87,16 +83,17 @@ proc parseObject {} {
             sectionname "Date"
 
             # https://www.epochconverter.com/coredata
-            set dateValue [expr { [::tcl::mathfunc::int [double]] + 978307200 }]
-            set dateValue [clock format $dateValue]
+            set dateValueRaw [double]
+            set dateValue [clock format [expr { [::tcl::mathfunc::int $dateValueRaw] + 978307200 }]]
 
             sectionvalue $dateValue
             move -8
             entry "Date value" $dateValue 8
+            entry "Date value (raw)" $dateValueRaw 8
             move 8
 
             endsection
-            return [list $markerLeft $dateValue 8]
+            return [list $markerLeft $dateValue 9]
         }
 
         0101 {
@@ -125,7 +122,7 @@ proc parseObject {} {
             move $stringSize
 
             endsection
-            return [list $markerLeft $stringValue $stringSize]
+            return [list $markerLeft $stringValue [expr { $stringSizeSize + $stringSize }]]
         }
 
         1101 {
@@ -167,11 +164,11 @@ proc parseObject {} {
             move $valueOffset
 
             endsection
-            return [list $markerLeft $dictValue $dictSize]
+            return [list $markerLeft $dictValue [expr { $dictSizeSize + $valueOffset }]]
         }
 
         default {
-            die "Unknown object type: $markerLeft"
+            die "Unknown object type: $markerByte"
         }
     }
 }
@@ -181,26 +178,25 @@ proc renderPlistTree {key i} {
 
     lassign [lindex $objectTable $i] objectPos objectType objectValue objectSize
 
-    jumpa $objectPos {
-        switch $objectType {
-            0001 -
-            0011 -
-            0101 {
-                entry $key $objectValue $objectSize
-            }
+    switch $objectType {
+        0001 -
+        0011 -
+        0101 {
+            entry "($i) $key" $objectValue $objectSize $objectPos
+        }
 
-            1101 {
-                section $key {
-                    dict for { keyRef valueRef } $objectValue {
-                        # Get key value
-                        set key [lindex $objectTable $keyRef]
+        1101 {
+            section $key {
+                dict for { keyRef valueRef } $objectValue {
+                    # Get key value
+                    set key [lindex $objectTable $keyRef]
 
-                        renderPlistTree [lindex $key 2] $valueRef
-                    }
+                    renderPlistTree [lindex $key 2] $valueRef
                 }
             }
         }
     }
+
 }
 
 main_guard {
@@ -246,8 +242,9 @@ main_guard {
 
     section -collapsed "Object table" {
         for { set i 0 } { $i < $::num_objects } { incr i } {
+            set objectPos [pos]
             lassign [parseObject] objectType objectValue objectSize
-            lappend objectTable [list [pos] $objectType $objectValue $objectSize]
+            lappend objectTable [list $objectPos $objectType $objectValue $objectSize]
         }
 
     }
