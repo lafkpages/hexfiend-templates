@@ -23,10 +23,19 @@ main_guard {
             return
         }
 
-        section "<$name>" {
-            # if {[llength [$parent attributes]]} {
-            #     puts "attributes: [join [$parent attributes] ", "]"
-            # }
+        section -collapsed "<$name>" {
+            set attrs [$parent attributes]
+            if {[llength $attrs]} {
+                section -collapsed "Attributes" {
+                    foreach attr $attrs {
+                        if [catch {
+                            entry $attr [$parent getAttribute $attr]
+                        }] {
+                            report "Invalid attribute: $attr"
+                        }
+                    }
+                }
+            }
 
             foreach child [$parent childNodes] {
                 traverse $child
