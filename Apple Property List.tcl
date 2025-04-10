@@ -382,4 +382,3 @@ main_guard {
 
     renderPlistTree "Plist tree" $top_object_offset
 }
-
