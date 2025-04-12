@@ -18,30 +18,49 @@ main_guard {
         set type [$parent nodeType]
         set name [$parent nodeName]
 
-        if {$type != "ELEMENT_NODE"} {
-            puts "$parent is a $type node named $name"
-            return
-        }
+        switch $type {
+            "TEXT_NODE" {
+                entry $name [$parent nodeValue]
+            }
 
-        section -collapsed "<$name>" {
-            set attrs [$parent attributes]
-            if {[llength $attrs]} {
-                section -collapsed "Attributes" {
-                    foreach attr $attrs {
-                        if [catch {
-                            entry $attr [$parent getAttribute $attr]
-                        }] {
-                            report "Invalid attribute: $attr"
+            "ELEMENT_NODE" {
+                set isSection 0
+
+                set attrs [$parent attributes]
+                if {[$parent hasChildNodes] || [llength $attrs]} {
+                    set isSection 1
+                }
+
+                if { $isSection } {
+                    section "<$name>" {
+                        if {[llength $attrs]} {
+                            section -collapsed "Attributes" {
+                                foreach attr $attrs {
+                                    if [catch {
+                                        entry $attr [$parent getAttribute $attr]
+                                    }] {
+                                        report "Invalid attribute: $attr"
+                                    }
+                                }
+                            }
+                        }
+
+                        foreach child [$parent childNodes] {
+                            traverse $child
                         }
                     }
+                } else {
+                    entry "<$name>" ""
                 }
             }
 
-            foreach child [$parent childNodes] {
-                traverse $child
+            default {
+                entry "Unknown node type" $type
+                return
             }
         }
     }
+
 
     traverse $root
 }
