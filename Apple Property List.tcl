@@ -253,6 +253,7 @@ proc parseObject {} {
 
             set valueOffset [expr { $dictSize * $::object_ref_size }]
 
+            set dictValue [dict create]
             for { set i 0 } { $i < $dictSize } { incr i } {
                 set keyRef [uint_n $::object_ref_size]
                 move -$::object_ref_size
