@@ -166,12 +166,17 @@ proc parseObject {} {
             entry "String size" $stringSize $stringSizeSize
             move $stringSizeSize
 
-            set stringValue [ascii $stringSize]
+            if { $stringSize > 0 } {
+                set stringValue [ascii $stringSize]
 
-            sectionvalue $stringValue
-            move -$stringSize
-            entry "String value" $stringValue $stringSize
-            move $stringSize
+                sectionvalue $stringValue
+                move -$stringSize
+                entry "String value" $stringValue $stringSize
+                move $stringSize
+            } else {
+                set stringValue ""
+            }
+
 
             endsection
             return [list $markerLeft $stringValue [expr { $stringSizeSize + $stringSize }]]
