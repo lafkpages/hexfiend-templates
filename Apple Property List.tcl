@@ -148,6 +148,39 @@ proc parseObject {} {
             return [list $markerLeft $dateValue 9]
         }
 
+        "0100*" {
+            sectionname "Data"
+
+            set dataSize 0
+            set dataSizeSize 0
+            if { $markerRight == 1111 } {
+                set dataSizeInt [parseInt]
+                set dataSize [lindex $dataSizeInt 0]
+                set dataSizeSize [lindex $dataSizeInt 1]
+            } else {
+                set dataSize $markerRightValue
+                set dataSizeSize 1
+            }
+
+            move -$dataSizeSize
+            entry "Data size" $dataSize $dataSizeSize
+            move $dataSizeSize
+
+            if { $dataSize > 0 } {
+                set dataValue [bytes $dataSize]
+
+                sectionvalue $dataValue
+                move -$dataSize
+                entry "Data value" $dataValue $dataSize
+                move $dataSize
+            } else {
+                set dataValue ""
+            }
+
+            endsection
+            return [list $markerLeft $dataValue [expr { $dataSizeSize + $dataSize }]]
+        }
+
         "0101*" {
             sectionname "String (ASCII)"
 
@@ -304,6 +337,10 @@ proc renderPlistTree {key i} {
 
         0011 {
             entry $key "date:\t\t$objectValue" $objectSize $objectPos
+        }
+
+        0100 {
+            entry $key "data:\t\t$objectValue" $objectSize $objectPos
         }
 
         0101 {
