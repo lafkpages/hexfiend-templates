@@ -240,7 +240,7 @@ proc parseObject {} {
             move $stringSizeSize
 
             if { $stringSize > 0 } {
-                set stringValue [bytes [expr { $stringSize * 2 }]]
+                set stringValue [utf16 [expr { $stringSize * 2 }]]
 
                 sectionvalue $stringValue
                 move -$stringSize
