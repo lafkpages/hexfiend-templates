@@ -24,6 +24,12 @@ proc uint_n {n} {
         2 { return [uint16] }
         4 { return [uint32] }
         8 { return [uint64] }
+        16 {
+            # HexFiend does not support uint128, so we must use a workaround
+            set high [uint64]
+            set low [uint64]
+            return [expr { $high * 2 ** 64 + $low }]
+        }
         default {
             die "Invalid uint_n size: $n"
         }
