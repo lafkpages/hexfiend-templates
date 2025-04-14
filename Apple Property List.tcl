@@ -215,6 +215,39 @@ proc parseObject {} {
             return [list $markerLeft $stringValue [expr { $stringSizeSize + $stringSize }]]
         }
 
+        "0110*" {
+            sectionname "String (Unicode)"
+
+            set stringSize 0
+            set stringSizeSize 0
+            if { $markerRight == 1111 } {
+                set stringSizeInt [parseInt]
+                set stringSize [lindex $stringSizeInt 0]
+                set stringSizeSize [lindex $stringSizeInt 1]
+            } else {
+                set stringSize $markerRightValue
+                set stringSizeSize 1
+            }
+
+            move -$stringSizeSize
+            entry "String size" "$stringSize chars ([expr { $stringSize * 2 }] bytes)" $stringSize $stringSizeSize
+            move $stringSizeSize
+
+            if { $stringSize > 0 } {
+                set stringValue [bytes [expr { $stringSize * 2 }]]
+
+                sectionvalue $stringValue
+                move -$stringSize
+                entry "String value" $stringValue $stringSize
+                move $stringSize
+            } else {
+                set stringValue ""
+            }
+
+            endsection
+            return [list $markerLeft $stringValue [expr { $stringSizeSize + $stringSize * 2 }]]
+        }
+
         "1000*" {
             sectionname "UID"
 
@@ -344,6 +377,10 @@ proc renderPlistTree {key i} {
         }
 
         0101 {
+            entry $key "string:\t$objectValue" $objectSize $objectPos
+        }
+
+        0110 {
             entry $key "string:\t$objectValue" $objectSize $objectPos
         }
 
