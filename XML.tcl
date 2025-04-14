@@ -25,14 +25,27 @@ main_guard {
 
             "ELEMENT_NODE" {
                 set isSection 0
+                set value ""
 
                 set attrs [$parent attributes]
-                if {[$parent hasChildNodes] || [llength $attrs]} {
+                set childNodes [$parent childNodes]
+
+                if {[llength $childNodes] == 1} {
+                    set child [lindex $childNodes 0]
+
+                    if {[$child nodeType] == "TEXT_NODE"} {
+                        set value [$child nodeValue]
+                    } else {
+                        set isSection 1
+                    }
+                } elseif {[llength $childNodes] > 1 || [llength $attrs]} {
                     set isSection 1
                 }
 
                 if { $isSection } {
                     section "<$name>" {
+                        sectionvalue $value
+
                         if {[llength $attrs]} {
                             section -collapsed "Attributes" {
                                 foreach attr $attrs {
@@ -45,12 +58,12 @@ main_guard {
                             }
                         }
 
-                        foreach child [$parent childNodes] {
+                        foreach child $childNodes {
                             traverse $child
                         }
                     }
                 } else {
-                    entry "<$name>" ""
+                    entry "<$name>" $value
                 }
             }
 
