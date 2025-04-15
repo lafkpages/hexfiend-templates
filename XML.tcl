@@ -38,7 +38,11 @@ main_guard {
                     } else {
                         set isSection 1
                     }
-                } elseif {[llength $childNodes] > 1 || [llength $attrs]} {
+                } elseif {[llength $childNodes] > 1} {
+                    set isSection 1
+                }
+
+                if {[llength $attrs]} {
                     set isSection 1
                 }
 
