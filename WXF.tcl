@@ -43,6 +43,24 @@ proc parse_part {} {
 
                 int16 "Integer value"
             }
+            105 {
+                sectionname "Int32"
+
+                move -1
+                entry "Part type" "int32" 1
+                move 1
+
+                int32 "Integer value"
+            }
+            76 {
+                sectionname "Int64"
+
+                move -1
+                entry "Part type" "int64" 1
+                move 1
+
+                int64 "Integer value"
+            }
             83 {
                 sectionname "String"
 
