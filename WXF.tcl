@@ -153,7 +153,7 @@ main_guard {
     }
 
     section "Data" {
-        while {1} {
+        while { ![end] } {
             parse_part
         }
     }
