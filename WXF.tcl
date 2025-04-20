@@ -61,6 +61,15 @@ proc parse_part {} {
 
                 int64 "Integer value"
             }
+            114 {
+                sectionname "IEEE double-precision real"
+
+                move -1
+                entry "Part type" "double" 1
+                move 1
+
+                double "Double value"
+            }
             83 {
                 sectionname "String"
 
