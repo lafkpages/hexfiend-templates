@@ -92,6 +92,17 @@ proc parse_part {} {
 
                 ascii $symbol_length "Symbol data"
             }
+            73 {
+                sectionname "Big integer"
+
+                move -1
+                entry "Part type" "big integer" 1
+                move 1
+
+                set length [parse_varint]
+
+                ascii $length "Big integer data"
+            }
             82 {
                 sectionname "Big real"
 
