@@ -101,7 +101,10 @@ proc parse_part {} {
 
                 set length [parse_varint]
 
-                ascii $length "Big integer data"
+                set value [ascii $length]
+                move -$length
+                entry "Big integer data" $value $length
+                move $length
             }
             82 {
                 sectionname "Big real"
