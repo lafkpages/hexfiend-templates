@@ -7,13 +7,11 @@ include "hexfiend-templates/utils/util.tcl"
 # https://github.com/WolframResearch/WolframClientForPython/blob/master/wolframclient/deserializers/wxf/wxfparser.py
 
 proc parse_part {} {
-    section "Unknown part" {
-        set part_type [uint8]
+    set part_type [uint8]
 
-        switch $part_type {
-            102 {
-                sectionname "Function"
-
+    switch $part_type {
+        102 {
+            section "Function" {
                 move -1
                 entry "Part type" "function" 1
                 move 1
@@ -25,76 +23,104 @@ proc parse_part {} {
                     parse_part
                 }
             }
-            67 {
-                sectionname "Int8"
-
+        }
+        67 {
+            section -collapsed "Int8" {
                 move -1
                 entry "Part type" "int8" 1
                 move 1
 
-                int8 "Integer value"
+                set value [int8]
+                sectionvalue $value
+                move -1
+                entry "Integer value" $value 1
+                move 1
             }
-            106 {
-                sectionname "Int16"
-
+        }
+        106 {
+            section -collapsed "Int16" {
                 move -1
                 entry "Part type" "int16" 1
                 move 1
 
-                int16 "Integer value"
+                set value [int16]
+                sectionvalue $value
+                move -2
+                entry "Integer value" $value 2
+                move 2
             }
-            105 {
-                sectionname "Int32"
-
+        }
+        105 {
+            section -collapsed "Int32" {
                 move -1
                 entry "Part type" "int32" 1
                 move 1
 
-                int32 "Integer value"
+                set value [int32]
+                sectionvalue $value
+                move -4
+                entry "Integer value" $value 4
+                move 4
             }
-            76 {
-                sectionname "Int64"
-
+        }
+        76 {
+            section -collapsed "Int64" {
                 move -1
                 entry "Part type" "int64" 1
                 move 1
 
-                int64 "Integer value"
+                set value [int64]
+                sectionvalue $value
+                move -8
+                entry "Integer value" $value 8
+                move 8
             }
-            114 {
-                sectionname "IEEE double-precision real"
-
+        }
+        114 {
+            section -collapsed "IEEE double-precision real" {
                 move -1
                 entry "Part type" "double" 1
                 move 1
 
-                double "Double value"
+                set value [double]
+                sectionvalue $value
+                move -8
+                entry "Double value" $value 8
+                move 8
             }
-            83 {
-                sectionname "String"
-
+        }
+        83 {
+            section -collapsed "String" {
                 move -1
                 entry "Part type" "string" 1
                 move 1
 
                 set str_length [parse_varint]
 
-                ascii $str_length "String data"
+                set value [ascii $str_length]
+                sectionvalue $value
+                move -$str_length
+                entry "String data" $value $str_length
+                move $str_length
             }
-            115 {
-                sectionname "Symbol"
-
+        }
+        115 {
+            section -collapsed "Symbol" {
                 move -1
                 entry "Part type" "symbol" 1
                 move 1
 
                 set symbol_length [parse_varint]
 
-                ascii $symbol_length "Symbol data"
+                set value [ascii $symbol_length]
+                sectionvalue $value
+                move -$symbol_length
+                entry "Symbol data" $value $symbol_length
+                move $symbol_length
             }
-            73 {
-                sectionname "Big integer"
-
+        }
+        73 {
+            section -collapsed "Big integer" {
                 move -1
                 entry "Part type" "big integer" 1
                 move 1
@@ -102,13 +128,14 @@ proc parse_part {} {
                 set length [parse_varint]
 
                 set value [ascii $length]
+                sectionvalue $value
                 move -$length
                 entry "Big integer data" $value $length
                 move $length
             }
-            82 {
-                sectionname "Big real"
-
+        }
+        82 {
+            section -collapsed "Big real" {
                 move -1
                 entry "Part type" "big real" 1
                 move 1
@@ -117,11 +144,15 @@ proc parse_part {} {
 
                 set length [parse_varint]
 
-                ascii $length "Big real data"
+                set value [ascii $length]
+                sectionvalue $value
+                move -$length
+                entry "Big real data" $value $length
+                move $length
             }
-            65 {
-                sectionname "Association"
-
+        }
+        65 {
+            section "Association" {
                 move -1
                 entry "Part type" "association" 1
                 move 1
@@ -133,9 +164,9 @@ proc parse_part {} {
                     parse_part
                 }
             }
-            45 {
-                sectionname "Rule in association"
-
+        }
+        45 {
+            section "Rule in association" {
                 move -1
                 entry "Part type" "rule" 1
                 move 1
@@ -143,9 +174,9 @@ proc parse_part {} {
                 parse_part
                 parse_part
             }
-            default {
-                die "Unknown part type: $part_type"
-            }
+        }
+        default {
+            die "Unknown part type: $part_type"
         }
     }
 }
