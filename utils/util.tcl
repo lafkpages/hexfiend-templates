@@ -7,6 +7,16 @@ set hexf_path "/opt/homebrew/bin/hexf"
 set has_wish [file exists $wish_path]
 set has_hexf [file exists $hexf_path]
 
+proc ensure_wish {} {
+    global has_wish
+
+    if {!$has_wish} {
+        global wish_path
+
+        error "wish binary not found at $wish_path. Install it using Homebrew: brew install tcl-tk"
+    }
+}
+
 proc ensure_hexf {} {
     global has_hexf
 
