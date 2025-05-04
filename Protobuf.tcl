@@ -15,66 +15,6 @@
 # Set default endianness for fixed-size types (Protobuf uses little-endian)
 little_endian
 
-# Procedure to read a Base 128 Varint
-# Returns the decoded unsigned integer value.
-# Creates a UI entry for the varint itself if a label is provided.
-proc read_varint {label} {
-    global errorInfo # For debugging potential errors within the proc
-
-    set start_pos [pos]
-    set result 0
-    set shift 0
-    set byte_count 0
-
-    if {[catch {
-        while {true} {
-            if {[end]} {
-                error "Reached end of file while reading varint starting at offset $start_pos"
-            }
-            set byte [uint8]
-            incr byte_count
-            set value [expr {$byte & 0x7F}]
-
-            # Check for overflow before applying shift
-            if {$shift >= 64 || ($shift == 63 && $value > 1)} {
-                error "Varint overflow near offset [pos]"
-            }
-
-            # Tcl handles arbitrary precision integers, so direct addition is fine
-            set result [expr {$result + ($value << $shift)}]
-
-            if {($byte & 0x80) == 0} {
-                # MSB is 0, this is the last byte
-                break
-            }
-
-            set shift [expr {$shift + 7}]
-            # Max 10 bytes for a 64-bit varint
-            if {$byte_count >= 10 && ($byte & 0x80) != 0} {
-                # Technically, the 10th byte's top bit must be 0 for standard 64-bit varints.
-                # We already check shift >= 64, but this adds clarity.
-                error "Varint seems too long (more than 10 bytes with MSB set) near offset [pos]"
-            }
-        }
-    } errMsg options]} {
-        # Handle errors during byte reading or processing
-        puts stderr "Error in read_varint ($label) at offset [pos]: $errMsg"
-        # Optionally re-throw or return an error indicator
-        error "Failed to read varint: $errMsg" $options $errorCode
-    }
-
-    set current_pos [pos]
-    set varint_len [expr {$current_pos - $start_pos}]
-
-    # Create a UI entry for the varint value and its range if label is given
-    if {[string length $label] > 0} {
-        entry $label $result $varint_len $start_pos
-    }
-
-    # Return the decoded value
-    return $result
-}
-
 # Procedure to decode ZigZag encoded varint
 proc decode_zigzag {value} {
     # Works for both 32 and 64 bit, assuming Tcl's arbitrary precision handles it
@@ -111,7 +51,7 @@ proc parse_proto_message { end_pos } {
 
         # Read the Tag (Field Number + Wire Type)
         set tag_start_pos [pos]
-        set tag_varint [read_varint ""] ; # Read internally first
+        set tag_varint [uleb128]
         set tag_len [expr {[pos] - $tag_start_pos}]
 
         set wire_type [expr {$tag_varint & 0x07}]
@@ -145,7 +85,7 @@ proc parse_proto_message { end_pos } {
             switch $wire_type_str {
                 VARINT {
                     set value_start_pos [pos]
-                    set value [read_varint ""] ; # Read internally
+                    set value [uleb128]
                     set value_len [expr {[pos] - $value_start_pos}]
 
                     # Display different interpretations
@@ -172,7 +112,9 @@ proc parse_proto_message { end_pos } {
                 }
                 LEN {
                     set len_start_pos [pos]
-                    set len [read_varint "Length (Varint)"]
+                    set len [uleb128]
+                    entry "Length" $len [expr {[pos] - $len_start_pos}] $len_start_pos
+
                     set data_start_pos [pos]
                     sectionvalue "Length = $len bytes"
 
