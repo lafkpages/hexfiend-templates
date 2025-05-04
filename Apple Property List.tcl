@@ -7,8 +7,6 @@
 
 include "Utility/General.tcl"
 
-requires 0 "62706C697374"
-
 big_endian
 
 variable offset_table_offset_size
@@ -17,7 +15,7 @@ variable num_objects
 variable top_object_offset
 variable offset_table_start
 
-set objectTable [list]
+set ::objectTable [list]
 
 proc uint_n {n} {
     switch $n {
@@ -393,9 +391,7 @@ proc parseObject {} {
 }
 
 proc renderPlistTree {key i} {
-    global objectTable
-
-    lassign [lindex $objectTable $i] objectPos objectType objectValue objectSize
+    lassign [lindex $::objectTable $i] objectPos objectType objectValue objectSize
 
     switch $objectType {
         0000 {
@@ -443,7 +439,7 @@ proc renderPlistTree {key i} {
             section $key {
                 dict for { keyRef valueRef } $objectValue {
                     # Get key value
-                    set key [lindex $objectTable $keyRef]
+                    set key [lindex $::objectTable $keyRef]
 
                     renderPlistTree [lindex $key 2] $valueRef
                 }
@@ -453,18 +449,22 @@ proc renderPlistTree {key i} {
 
 }
 
-main_guard {
+proc plist {start len} {
+    requires $start "62706C697374"
+
+    goto $start
+
     section -collapsed "Header" {
         set plistVersion [ascii 8]
-        entry "Plist Version" $plistVersion 8 0
+        entry "Plist Version" $plistVersion [expr { $start + 8 }] $start
 
         # For now, only bplist00 is supported
         # TODO: assert won't work lmao
         # assert { "$plistVersion" != "bplist00" }
     }
 
-    section -collapsed "Trailer" {
-        jumpa [expr { [len] - 27 }] {
+    jumpa [expr { $start + $len - 27 }] {
+        section -collapsed "Trailer" {
             bytes 1 "Sort version"
 
             set ::offset_table_offset_size [uint8]
@@ -498,10 +498,17 @@ main_guard {
         for { set i 0 } { $i < $::num_objects } { incr i } {
             set objectPos [pos]
             lassign [parseObject] objectType objectValue objectSize
-            lappend objectTable [list $objectPos $objectType $objectValue $objectSize]
+            lappend ::objectTable [list $objectPos $objectType $objectValue $objectSize]
         }
 
     }
 
-    renderPlistTree "Plist tree" $top_object_offset
+    renderPlistTree "Plist tree" $::top_object_offset
+}
+
+# If $::embedded_plist is not set, run the main guard
+if { ![info exists ::embedded_plist] } {
+    main_guard {
+        plist 0 [len]
+    }
 }
