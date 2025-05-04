@@ -180,6 +180,7 @@ proc parse_proto_message { end_pos } {
     }
 }
 
+
 # Wrap the main parsing logic in a catch block for better error reporting
 if {[catch {
     # Parse the entire file as a top-level message
