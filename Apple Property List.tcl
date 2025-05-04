@@ -3,7 +3,7 @@
 # https://en.wikipedia.org/wiki/Property_list
 # https://medium.com/@karaiskc/understanding-apples-binary-property-list-format-281e6da00dbd
 #
-# .types = ( com.apple.property-list, plist );
+# .types = ( com.apple.property-list, plist, loctable );
 
 include "Utility/General.tcl"
 
