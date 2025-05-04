@@ -504,6 +504,9 @@ proc plist {start len} {
     }
 
     renderPlistTree "Plist tree" $::top_object_offset
+
+    goto $start
+    move $len
 }
 
 # If $::embedded_plist is not set, run the main guard
