@@ -35,9 +35,28 @@ proc decode_zigzag {value} {
 
 
 # Main procedure to parse a Protobuf message structure up to a certain position
-# end_pos: The absolute file offset where parsing should stop for this message/level.
-proc parse_proto_message { end_pos } {
+# start_pos: The absolute file offset where parsing should begin for this segment.
+# length:    The number of bytes belonging to this segment.
+proc parse_proto_message { start_pos length } {
     global errorInfo # Make errorInfo accessible for debugging
+
+    # Set initial position
+    goto $start_pos
+
+    # Calculate end position for this segment
+    set end_pos [expr {$start_pos + $length}]
+
+    # --- Sanity check: Ensure end_pos doesn't exceed actual file length ---
+    # (This shouldn't happen if called correctly, e.g., for submessages,
+    # but good for robustness, especially for the top-level call).
+    if {$end_pos > [len]} {
+        puts stderr "Warning: Requested parsing length $length from $start_pos exceeds file length [len]. Clamping to file end."
+        set end_pos [len]
+        # Adjust length accordingly if needed, although the loop condition handles it
+        set length [expr {$end_pos - $start_pos}]
+        if {$length < 0} { set length 0 } # Handle edge case if start_pos was already beyond EOF
+    }
+
 
     while {true} {
         set current_offset [pos]
@@ -178,13 +197,24 @@ proc parse_proto_message { end_pos } {
             }
         }
     }
+
+    # --- Final check: Did we end exactly where expected? ---
+    if {[pos] != $end_pos} {
+        # This usually indicates an issue with the data or the parsing logic (e.g., an error stopped early,
+        # or the data didn't conform to the expected total length).
+        puts stderr "Warning: Parsing segment (start: $start_pos, len: $length) ended at [pos], but expected to end at $end_pos."
+        # Optionally, move the pointer to the expected end_pos if desired,
+        # but leaving it might be better for debugging.
+        # goto $end_pos
+    }
+
 }
 
 
 # Wrap the main parsing logic in a catch block for better error reporting
 if {[catch {
     # Parse the entire file as a top-level message
-    parse_proto_message [len]
+    parse_proto_message 0 [len]
 } result options]} {
     # An error occurred during parsing
     set err_code [dict get $options -errorcode]
