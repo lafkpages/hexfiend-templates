@@ -1,7 +1,7 @@
 # .types = ( wxf );
 
 include "Utility/General.tcl"
-include "hexfiend-templates/utils/util.tcl"
+include "hexfiend-templates/helpers/util.tcl"
 
 # https://reference.wolfram.com/language/tutorial/WXFFormatDescription.html
 # https://github.com/WolframResearch/WolframClientForPython/blob/master/wolframclient/deserializers/wxf/wxfparser.py
@@ -215,7 +215,7 @@ main_guard {
         global wish_path
 
         if { $has_wish } {
-            exec $wish_path [file join $util_dir "save_wxf.tcl"] << $data &
+            exec $wish_path [file join $helpers_dir "save_wxf.tcl"] << $data &
         }
 
         die "Directly reading compressed WXF data is not yet implemented. Please use the 'Save WXF' option to extract the data."

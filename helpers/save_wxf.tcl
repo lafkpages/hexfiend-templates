@@ -1,7 +1,7 @@
 # .hidden = true;
 
-set util_dir [file dirname [info script]]
-source [file join $util_dir "util.tcl"]
+set helpers_dir [file dirname [info script]]
+source [file join $helpers_dir "util.tcl"]
 
 wm state . withdrawn
 

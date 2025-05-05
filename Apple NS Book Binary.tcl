@@ -1,5 +1,5 @@
 include "Utility/General.tcl"
-include "hexfiend-templates/utils/util.tcl"
+include "hexfiend-templates/helpers/util.tcl"
 
 # Seen in NSOSPLastRootDirectory property in many Apple plist files
 # https://github.com/p0deje/Maccy/issues/883

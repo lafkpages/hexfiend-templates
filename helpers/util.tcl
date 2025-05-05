@@ -1,6 +1,6 @@
 # .hidden = true;
 
-set util_dir [file dirname [info script]]
+set helpers_dir [file dirname [info script]]
 set wish_path "/opt/homebrew/bin/wish"
 set hexf_path "/opt/homebrew/bin/hexf"
 
