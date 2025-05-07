@@ -14,6 +14,31 @@ main_guard {
     set doc [dom parse $xml]
     set root [$doc documentElement]
 
+    section "Document info" {
+        set rootTag [$root nodeName]
+        switch -nocase $rootTag {
+            "html" {
+                entry "Document type" "HTML"
+
+                entry "<script> count" [llength [$doc getElementsByTagName "script"]]
+                entry "<link> count" [llength [$doc getElementsByTagName "link"]]
+                entry "<style> count" [llength [$doc getElementsByTagName "style"]]
+            }
+
+            "svg" {
+                entry "Document type" "SVG"
+
+                entry "Width" [$root getAttribute "width"]
+                entry "Height" [$root getAttribute "height"]
+                entry "<path> count" [llength [$doc getElementsByTagName "path"]]
+            }
+
+            default {
+                entry "Document type" "Unknown XML"
+            }
+        }
+    }
+
     proc traverse {parent} {
         set type [$parent nodeType]
         set name [$parent nodeName]
@@ -77,7 +102,6 @@ main_guard {
             }
         }
     }
-
 
     traverse $root
 }
