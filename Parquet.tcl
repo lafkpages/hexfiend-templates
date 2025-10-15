@@ -151,10 +151,8 @@ set RepetitionTypeNames "REQUIRED OPTIONAL REPEATED"
 main_guard {
     goto [len]
     move -8
-    set mlen [uint32 "mlen"]
+    set mlen [uint32]
     move -4
-    move -$mlen
-    bytes $mlen "metadata"
     move -$mlen
 
     set metadata_dict [fields_to_dict [read_obj]]
