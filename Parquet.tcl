@@ -157,9 +157,13 @@ main_guard {
 
     set metadata_dict [fields_to_dict [read_obj]]
 
+    goto [len]
+    move -8
+    move -$mlen
+
     section "Metadata" {
         if {[dict exists $metadata_dict 1]} {
-            entry "Version" [dict get $metadata_dict 1]
+            entry "Version" [dict get $metadata_dict 1] 1
         }
 
         if {[dict exists $metadata_dict 2]} {
