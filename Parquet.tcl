@@ -239,7 +239,89 @@ main_guard {
         }
 
         if {[dict exists $metadata_dict 4]} {
-            entry "Row Groups" [dict get $metadata_dict 4]
+            set row_groups [dict get $metadata_dict 4]
+
+            section "Row Groups" {
+                for {set i 0} {$i < [llength $row_groups]} {incr i} {
+                    set row_group_fields [lindex $row_groups $i]
+                    set row_group_dict [fields_to_dict $row_group_fields]
+
+                    section "Row Group $i" {
+                        if {[dict exists $row_group_dict 2]} {
+                            entry "Total Byte Size" [dict get $row_group_dict 2]
+                        }
+
+                        if {[dict exists $row_group_dict 3]} {
+                            entry "Num Rows" [dict get $row_group_dict 3]
+                        }
+
+                        if {[dict exists $row_group_dict 1]} {
+                            set columns [dict get $row_group_dict 1]
+
+                            section "Columns" {
+                                for {set j 0} {$j < [llength $columns]} {incr j} {
+                                    set column_fields [lindex $columns $j]
+                                    set column_dict [fields_to_dict $column_fields]
+
+                                    section "Column Chunk $j" {
+                                        if {[dict exists $column_dict 1]} {
+                                            entry "File Path" [decode_utf8 [dict get $column_dict 1]]
+                                        }
+
+                                        if {[dict exists $column_dict 2]} {
+                                            entry "File Offset" [dict get $column_dict 2]
+                                        }
+
+                                        if {[dict exists $column_dict 3]} {
+                                            entry "Meta Data" [dict get $column_dict 3]
+                                        }
+
+                                        if {[dict exists $column_dict 4]} {
+                                            entry "Offset Index Offset" [dict get $column_dict 4]
+                                        }
+
+                                        if {[dict exists $column_dict 5]} {
+                                            entry "Offset Index Length" [dict get $column_dict 5]
+                                        }
+
+                                        if {[dict exists $column_dict 6]} {
+                                            entry "Column Index Offset" [dict get $column_dict 6]
+                                        }
+
+                                        if {[dict exists $column_dict 7]} {
+                                            entry "Column Index Length" [dict get $column_dict 7]
+                                        }
+
+                                        if {[dict exists $column_dict 8]} {
+                                            entry "Crypto Metadata" [dict get $column_dict 8]
+                                        }
+
+                                        if {[dict exists $column_dict 9]} {
+                                            entry "Encrypted Column Metadata" [dict get $column_dict 9]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if {[dict exists $row_group_dict 4]} {
+                            entry "Sorting Columns" [dict get $row_group_dict 4]
+                        }
+
+                        if {[dict exists $row_group_dict 5]} {
+                            entry "File Offset" [dict get $row_group_dict 5]
+                        }
+
+                        if {[dict exists $row_group_dict 6]} {
+                            entry "Total Compressed Size" [dict get $row_group_dict 6]
+                        }
+
+                        if {[dict exists $row_group_dict 7]} {
+                            entry "Ordinal" [dict get $row_group_dict 7]
+                        }
+                    }
+                }
+            }
         }
 
         if {[dict exists $metadata_dict 5]} {
