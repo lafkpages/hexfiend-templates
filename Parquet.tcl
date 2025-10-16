@@ -146,8 +146,80 @@ proc decode_utf8 {value} {
     return $decoded
 }
 
+proc enum_name {value names} {
+    if {[string is integer -strict $value] && $value >= 0 && $value < [llength $names]} {
+        return [lindex $names $value]
+    }
+
+    return $value
+}
+
+proc parse_schema_impl {schema idx path nodesVar leafMapVar} {
+    upvar $nodesVar nodes
+    upvar $leafMapVar leaf_map
+
+    if {$idx >= [llength $schema]} {
+        return $idx
+    }
+
+    set schema_fields [lindex $schema $idx]
+    set schema_dict [fields_to_dict $schema_fields]
+
+    set name [format "Schema Element %d" $idx]
+    if {[dict exists $schema_dict 4]} {
+        set decoded_name [decode_utf8 [dict get $schema_dict 4]]
+        if {$decoded_name ne ""} {
+            set name $decoded_name
+        }
+    }
+
+    if {[llength $path] == 0} {
+        set current_path [list $name]
+    } else {
+        set current_path [concat $path [list $name]]
+    }
+
+    set num_children 0
+    if {[dict exists $schema_dict 5]} {
+        set num_children [dict get $schema_dict 5]
+    }
+
+    set node [dict create index $idx dict $schema_dict path $current_path num_children $num_children]
+    lappend nodes $node
+
+    if {$num_children == 0} {
+        set full_key [join $current_path "/"]
+        if {$full_key ne ""} {
+            dict set leaf_map $full_key $node
+        }
+
+        if {[llength $current_path] > 1} {
+            set short_key [join [lrange $current_path 1 end] "/"]
+            if {$short_key ne ""} {
+                dict set leaf_map $short_key $node
+            }
+        }
+    }
+
+    set next_idx [expr {$idx + 1}]
+    for {set i 0} {$i < $num_children} {incr i} {
+        set next_idx [parse_schema_impl $schema $next_idx $current_path nodes leaf_map]
+    }
+
+    return $next_idx
+}
+
+proc parse_schema {schema} {
+    set nodes {}
+    set leaf_map {}
+    parse_schema_impl $schema 0 {} nodes leaf_map
+    return [list $nodes $leaf_map]
+}
+
 set TypeNames "BOOLEAN INT32 INT64 INT96 FLOAT DOUBLE BYTE_ARRAY FIXED_LEN_BYTE_ARRAY"
 set RepetitionTypeNames "REQUIRED OPTIONAL REPEATED"
+set EncodingNames "PLAIN PLAIN_DICTIONARY RLE BIT_PACKED DELTA_BINARY_PACKED DELTA_LENGTH_BYTE_ARRAY DELTA_BYTE_ARRAY RLE_DICTIONARY BYTE_STREAM_SPLIT"
+set CompressionCodecNames "UNCOMPRESSED SNAPPY GZIP LZO BROTLI LZ4 ZSTD LZ4_RAW"
 
 main_guard {
     goto [len]
@@ -167,27 +239,25 @@ main_guard {
             entry "Version" [dict get $metadata_dict 1] 1
         }
 
+        set schema_nodes {}
+        set schema_leaf_map {}
         if {[dict exists $metadata_dict 2]} {
             set schema [dict get $metadata_dict 2]
+            set parsed_schema [parse_schema $schema]
+            set schema_nodes [lindex $parsed_schema 0]
+            set schema_leaf_map [lindex $parsed_schema 1]
 
             section "Schema" {
-                for {set i 0} {$i < [llength $schema]} {incr i} {
-                    set schema_fields [lindex $schema $i]
-                    set schema_dict [fields_to_dict $schema_fields]
-
-                    set entry_name "Schema Element $i"
-                    if {[dict exists $schema_dict 4]} {
-                        set entry_name [decode_utf8 [dict get $schema_dict 4]]
+                foreach node $schema_nodes {
+                    set schema_dict [dict get $node dict]
+                    set entry_name [join [dict get $node path] "."]
+                    if {$entry_name eq ""} {
+                        set entry_name [format "Schema Element %d" [dict get $node index]]
                     }
 
                     section $entry_name {
                         if {[dict exists $schema_dict 1]} {
-                            set type_id [dict get $schema_dict 1]
-                            if {$type_id >= 0 && $type_id < [llength $TypeNames]} {
-                                entry "Type" [lindex $TypeNames $type_id]
-                            } else {
-                                entry "Type" $type_id
-                            }
+                            entry "Type" [enum_name [dict get $schema_dict 1] $TypeNames]
                         }
 
                         if {[dict exists $schema_dict 2]} {
@@ -195,12 +265,7 @@ main_guard {
                         }
 
                         if {[dict exists $schema_dict 3]} {
-                            set repetition_id [dict get $schema_dict 3]
-                            if {$repetition_id >= 0 && $repetition_id < [llength $RepetitionTypeNames]} {
-                                entry "Repetition Type" [lindex $RepetitionTypeNames $repetition_id]
-                            } else {
-                                entry "Repetition Type" $repetition_id
-                            }
+                            entry "Repetition Type" [enum_name [dict get $schema_dict 3] $RepetitionTypeNames]
                         }
 
                         if {[dict exists $schema_dict 4]} {
@@ -264,17 +329,97 @@ main_guard {
                                     set column_fields [lindex $columns $j]
                                     set column_dict [fields_to_dict $column_fields]
 
-                                    section "Column Chunk $j" {
+                                    set column_metadata_dict {}
+                                    set decoded_path {}
+                                    set column_schema_node ""
+                                    set schema_dict {}
+                                    set schema_type_name ""
+                                    set schema_repetition ""
+                                    set column_meta_type_name ""
+
+                                    if {[dict exists $column_dict 3]} {
+                                        set column_metadata_fields [dict get $column_dict 3]
+                                        set column_metadata_dict [fields_to_dict $column_metadata_fields]
+
+                                        if {[dict exists $column_metadata_dict 3]} {
+                                            foreach component [dict get $column_metadata_dict 3] {
+                                                lappend decoded_path [decode_utf8 $component]
+                                            }
+
+                                            set lookup_key [join $decoded_path "/"]
+                                            if {$lookup_key ne ""} {
+                                                if {[dict exists $schema_leaf_map $lookup_key]} {
+                                                    set column_schema_node [dict get $schema_leaf_map $lookup_key]
+                                                }
+                                            }
+                                        }
+
+                                        if {[dict exists $column_metadata_dict 1]} {
+                                            set column_meta_type_name [enum_name [dict get $column_metadata_dict 1] $TypeNames]
+                                        }
+                                    }
+
+                                    if {$column_schema_node ne ""} {
+                                        set schema_dict [dict get $column_schema_node dict]
+                                        if {[dict exists $schema_dict 1]} {
+                                            set schema_type_name [enum_name [dict get $schema_dict 1] $TypeNames]
+                                        }
+                                        if {[dict exists $schema_dict 3]} {
+                                            set schema_repetition [enum_name [dict get $schema_dict 3] $RepetitionTypeNames]
+                                        }
+                                    }
+
+                                    set column_label [format "Column Chunk %d" $j]
+                                    if {[llength $decoded_path] > 0} {
+                                        set column_label [format "Column %s" [join $decoded_path "."]]
+                                    }
+
+                                    set column_type_label ""
+                                    if {$schema_type_name ne ""} {
+                                        set column_type_label $schema_type_name
+                                    } elseif {$column_meta_type_name ne ""} {
+                                        set column_type_label $column_meta_type_name
+                                    }
+
+                                    if {$column_type_label ne ""} {
+                                        set column_section_name [format "%s (%s)" $column_label $column_type_label]
+                                    } else {
+                                        set column_section_name $column_label
+                                    }
+
+                                    section $column_section_name {
+                                        if {[llength $decoded_path] > 0} {
+                                            entry "Schema Path" [join $decoded_path "."]
+                                        }
+
+                                        if {$schema_repetition ne ""} {
+                                            entry "Repetition Type" $schema_repetition
+                                        }
+
+                                        if {[dict size $schema_dict] > 0} {
+                                            if {[dict exists $schema_dict 10]} {
+                                                entry "Logical Type" [dict get $schema_dict 10]
+                                            }
+
+                                            if {[dict exists $schema_dict 9]} {
+                                                entry "Field ID" [dict get $schema_dict 9]
+                                            }
+
+                                            if {[dict exists $schema_dict 7]} {
+                                                entry "Scale" [dict get $schema_dict 7]
+                                            }
+
+                                            if {[dict exists $schema_dict 8]} {
+                                                entry "Precision" [dict get $schema_dict 8]
+                                            }
+                                        }
+
                                         if {[dict exists $column_dict 1]} {
                                             entry "File Path" [decode_utf8 [dict get $column_dict 1]]
                                         }
 
                                         if {[dict exists $column_dict 2]} {
                                             entry "File Offset" [dict get $column_dict 2]
-                                        }
-
-                                        if {[dict exists $column_dict 3]} {
-                                            entry "Meta Data" [dict get $column_dict 3]
                                         }
 
                                         if {[dict exists $column_dict 4]} {
@@ -299,6 +444,64 @@ main_guard {
 
                                         if {[dict exists $column_dict 9]} {
                                             entry "Encrypted Column Metadata" [dict get $column_dict 9]
+                                        }
+
+                                        if {[dict size $column_metadata_dict] > 0} {
+                                            section "Column Meta Data" {
+                                                if {$column_meta_type_name ne ""} {
+                                                    entry "Type" $column_meta_type_name
+                                                } elseif {[dict exists $column_metadata_dict 1]} {
+                                                    entry "Type" [dict get $column_metadata_dict 1]
+                                                }
+
+                                                if {[dict exists $column_metadata_dict 2]} {
+                                                    set encodings {}
+                                                    foreach encoding [dict get $column_metadata_dict 2] {
+                                                        lappend encodings [enum_name $encoding $EncodingNames]
+                                                    }
+                                                    entry "Encodings" [join $encodings ", "]
+                                                }
+
+                                                if {[llength $decoded_path] > 0} {
+                                                    entry "Path In Schema" [join $decoded_path "."]
+                                                }
+
+                                                if {[dict exists $column_metadata_dict 4]} {
+                                                    entry "Codec" [enum_name [dict get $column_metadata_dict 4] $CompressionCodecNames]
+                                                }
+
+                                                if {[dict exists $column_metadata_dict 5]} {
+                                                    entry "Num Values" [dict get $column_metadata_dict 5]
+                                                }
+
+                                                if {[dict exists $column_metadata_dict 6]} {
+                                                    entry "Total Uncompressed Size" [dict get $column_metadata_dict 6]
+                                                }
+
+                                                if {[dict exists $column_metadata_dict 7]} {
+                                                    entry "Total Compressed Size" [dict get $column_metadata_dict 7]
+                                                }
+
+                                                if {[dict exists $column_metadata_dict 8]} {
+                                                    entry "Key Value Metadata" [dict get $column_metadata_dict 8]
+                                                }
+
+                                                if {[dict exists $column_metadata_dict 9]} {
+                                                    entry "Data Page Offset" [dict get $column_metadata_dict 9]
+                                                }
+
+                                                if {[dict exists $column_metadata_dict 10]} {
+                                                    entry "Index Page Offset" [dict get $column_metadata_dict 10]
+                                                }
+
+                                                if {[dict exists $column_metadata_dict 11]} {
+                                                    entry "Dictionary Page Offset" [dict get $column_metadata_dict 11]
+                                                }
+
+                                                if {[dict exists $column_metadata_dict 12]} {
+                                                    entry "Statistics" [dict get $column_metadata_dict 12]
+                                                }
+                                            }
                                         }
                                     }
                                 }
