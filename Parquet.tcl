@@ -2,6 +2,7 @@
 #
 # https://parquet.apache.org/docs/file-format/
 # https://github.com/skale-me/node-parquet/blob/master/lib/parquet.js
+# https://github.com/apache/parquet-format/blob/master/src/main/thrift/parquet.thrift
 
 include "Utility/General.tcl"
 include "hexfiend-templates/helpers/util.tcl"
