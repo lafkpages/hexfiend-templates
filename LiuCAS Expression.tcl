@@ -32,6 +32,10 @@ set expression_kinds(24) "SumSequence"
 set expression_kinds(25) "Unknown"
 set expression_kinds(255) "_Reserved"
 
+proc read_unknown_name {{name_length_label ""} {name_label ""}} {
+    return [str [uint8 $name_length_label] utf8 $name_label]
+}
+
 proc read_expression {{key ""}} {
     section "Unknown Expression type" {
         set kind [uint8 "Expression Kind"]
@@ -116,9 +120,19 @@ proc read_expression {{key ""}} {
             }
 
             25 {
-                set name_length [uint8 "Name Length"]
-                set name [str $name_length utf8 "Name"]
-                sectionvalue $name
+                sectionvalue [read_unknown_name "Name Length" "Name"]
+                sectioncollapse
+            }
+
+            20 -
+            24 {
+                # Sequence expressions
+                section -collapsed "Variable" {
+                    sectionvalue [read_unknown_name "Variable Name Length" "Variable Name"]
+                }
+                read_expression "Lower Bound"
+                read_expression "Upper Bound"
+                read_expression "Expression"
             }
 
             7 -
