@@ -59,6 +59,12 @@ proc read_expression {{key ""}} {
                 read_expression "Denominator"
             }
 
+            11 -
+            12 {
+                read_expression "A"
+                read_expression "B"
+            }
+
             14 {
                 read_expression "Dividend"
                 read_expression "Divisor"
