@@ -59,6 +59,11 @@ proc read_expression {{key ""}} {
                 read_expression "Denominator"
             }
 
+            14 {
+                read_expression "Dividend"
+                read_expression "Divisor"
+            }
+
             15 {
                 set byte_length [uint32 "Byte length"]
 
