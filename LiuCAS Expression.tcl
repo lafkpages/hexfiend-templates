@@ -97,6 +97,14 @@ proc read_expression {{key ""}} {
                 read_expression "Exponent"
             }
 
+            19 {
+                set factors_count [uint8 "Factors Count"]
+
+                for {set i 0} {$i < $factors_count} {incr i} {
+                    read_expression "Factor [expr {$i + 1}]"
+                }
+            }
+
             25 {
                 set name_length [uint8 "Name Length"]
                 set name [str $name_length utf8 "Name"]
@@ -111,7 +119,8 @@ proc read_expression {{key ""}} {
 
             3 -
             6 -
-            9 {
+            9 -
+            23 {
                 # Single argument functions
                 read_expression "Value"
             }
