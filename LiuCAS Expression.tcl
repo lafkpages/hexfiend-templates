@@ -33,7 +33,7 @@ set expression_kinds(25) "Unknown"
 set expression_kinds(255) "_Reserved"
 
 proc read_expression {{key ""}} {
-    section -collapsed "Unknown Expression type" {
+    section "Unknown Expression type" {
         set kind [uint8 "Expression Kind"]
         set kind_name $::expression_kinds($kind)
 
@@ -101,6 +101,7 @@ proc read_expression {{key ""}} {
                 }
 
                 sectionvalue $value
+                sectioncollapse
             }
 
             18 {
@@ -142,6 +143,7 @@ proc read_expression {{key ""}} {
             16 -
             17 {
                 # Constants, no additional data
+                sectioncollapse
             }
 
             default {
