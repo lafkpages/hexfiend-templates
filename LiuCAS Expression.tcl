@@ -77,27 +77,25 @@ proc read_expression {{key ""}} {
                 if {$byte_length == 0} {
                     set value 0
                 } else {
-                    binary scan [bytes $byte_length "Value"] c* signed_bytes
+                    # Convert arbitrary-length little-endian two's complement integer
+                    set raw_bytes [bytes $byte_length]
+                    binary scan $raw_bytes cu* byte_values
 
-                    set value 0
-                    set index 0
-                    set most_significant 0
-
-                    foreach signed_byte $signed_bytes {
-                        set byte [expr {($signed_byte + 256) % 256}]
-
-                        if {$index == 0} {
-                            set most_significant $byte
-                        }
-
-                        set value [expr {($value << 8) | $byte}]
-                        incr index
+                    set unsigned_value 0
+                    set bit_offset 0
+                    foreach byte $byte_values {
+                        set unsigned_value [expr {$unsigned_value | ($byte << $bit_offset)}]
+                        incr bit_offset 8
                     }
 
-                    if {$most_significant & 0x80} {
-                        set bit_count [expr {$byte_length * 8}]
-                        set value [expr {$value - (1 << $bit_count)}]
+                    set total_bits [expr {$byte_length * 8}]
+                    set sign_threshold [expr {1 << ($total_bits - 1)}]
+                    if {$unsigned_value >= $sign_threshold} {
+                        set value [expr {$unsigned_value - (1 << $total_bits)}]
+                    } else {
+                        set value $unsigned_value
                     }
+
                 }
 
                 sectionvalue $value
