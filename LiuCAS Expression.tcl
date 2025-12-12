@@ -19,13 +19,13 @@ set expression_kinds(11) "GCD"
 set expression_kinds(12) "LCM"
 set expression_kinds(13) "Log"
 set expression_kinds(14) "Mod"
-set expression_kinds(15) "Number"
-set expression_kinds(16) "Pi"
-set expression_kinds(17) "Placeholder"
-set expression_kinds(18) "Power"
-set expression_kinds(19) "Product"
-set expression_kinds(20) "ProductSequence"
-set expression_kinds(21) "Scoped"
+set expression_kinds(15) "Norm"
+set expression_kinds(16) "Number"
+set expression_kinds(17) "Pi"
+set expression_kinds(18) "Placeholder"
+set expression_kinds(19) "Power"
+set expression_kinds(20) "Product"
+set expression_kinds(21) "ProductSequence"
 set expression_kinds(22) "Sin"
 set expression_kinds(23) "SquareRoot"
 set expression_kinds(24) "SumSequence"
@@ -74,7 +74,7 @@ proc read_expression {{key ""}} {
                 read_expression "Divisor"
             }
 
-            15 {
+            16 {
                 set byte_length [uint32 "Byte length"]
 
                 set value ""
@@ -106,12 +106,12 @@ proc read_expression {{key ""}} {
                 sectioncollapse
             }
 
-            18 {
+            19 {
                 read_expression "Base"
                 read_expression "Exponent"
             }
 
-            19 {
+            20 {
                 set factors_count [uint8 "Factors Count"]
 
                 for {set i 0} {$i < $factors_count} {incr i} {
@@ -124,7 +124,7 @@ proc read_expression {{key ""}} {
                 sectioncollapse
             }
 
-            20 -
+            21 -
             24 {
                 # Sequence expressions
                 section -collapsed "Variable" {
@@ -152,8 +152,8 @@ proc read_expression {{key ""}} {
             2 -
             5 -
             8 -
-            16 -
-            17 {
+            17 -
+            18 {
                 # Constants, no additional data
                 sectioncollapse
             }
