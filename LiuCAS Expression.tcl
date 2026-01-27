@@ -20,6 +20,7 @@ set expression_kinds(12) "LCM"
 set expression_kinds(13) "Log"
 set expression_kinds(14) "Mod"
 set expression_kinds(15) "Norm"
+set expression_kinds(26) "Nth Prime Number"
 set expression_kinds(16) "Number"
 set expression_kinds(17) "Pi"
 set expression_kinds(18) "Placeholder"
@@ -147,6 +148,10 @@ proc read_expression {{key ""}} {
             23 {
                 # Single argument functions
                 read_expression "Value"
+            }
+
+            26 {
+                read_expression "N"
             }
 
             2 -
